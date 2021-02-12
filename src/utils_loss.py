@@ -2,6 +2,7 @@
 from utils_slicing import slicing
 from utils_distances import sliced_distance
 from utils import rand_projections
+import torch
 class loss:
     
     def __init__(self, ftype, stype, dtype, weighted):
@@ -47,13 +48,13 @@ class loss:
                 theta.data = theta.data / torch.sqrt(torch.sum(theta.data ** 2, dim=1))
             # X_projections, Y_projections = slicing(self.stype).get_slice(X,Y,theta) 
             # d = sliced_distance(self.dtype, self.weighted).compute(X_projections, Y_projections, weights, 2)
-        d = self.compute_sliced(X, Y, weights=weights)
+        d = self.compute_sliced(X, Y, weights=weights, projections=theta)
         return d
     
     def compute_distributional_sliced(self, X, Y, weights=None, projections=None, num_projections=1000, f=None, f_op=None, lam=0.5, iter=100, device='cuda'):
         dim = X.size(1)
         pro = rand_projections(dim, num_projections).to(device)
-        X_detach = X.detach(s)
+        X_detach = X.detach()
         Y_detach = Y.detach()
         for _ in range(iter):
             projections = f(pro)
@@ -70,3 +71,8 @@ class loss:
         d = self.compute_sliced(X_detach, Y_detach, weights=weights, projections=projections)
         return d
 
+def cosine_distance_torch(x1, x2=None, eps=1e-8):
+    x2 = x1 if x2 is None else x2
+    w1 = x1.norm(p=2, dim=1, keepdim=True)
+    w2 = w1 if x2 is x1 else x2.norm(p=2, dim=1, keepdim=True)
+    return torch.mean(torch.abs(torch.mm(x1, x2.t()) / (w1 * w2.t()).clamp(min=eps)))
