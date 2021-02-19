@@ -2,6 +2,8 @@
 from multipledispatch import dispatch
 from utils import simplex_norm
 import torch
+import ot
+import numpy as np
 
 class sliced_distance:
     def __init__(self, dtype='wasserstein', weighted=False):
@@ -71,7 +73,7 @@ def weighted_mean_distance(X_projections, Y_projections, weights, p):
     # X_projections = X.matmul(projections.t())
     # Y_projections = Y.matmul(projections.t())
     mean_X = torch.mean(X_projections, dim=0)
-    mean_Y = torch.matmul(nu.view(1,-1), Y_projections).squeeze()
+    mean_Y = torch.matmul(nu.t(), Y_projections).squeeze()
     mean_distance = torch.abs(mean_X - mean_Y)
     mean_distance = torch.pow(torch.pow(mean_distance, p).mean(), 1. / p)
     return mean_distance
@@ -83,18 +85,23 @@ def bures_distance(X_projections, Y_projections, p):
     squared_Y_projections = torch.pow(Y_projections, p)
     RMS_X = torch.sqrt(torch.mean(squared_X_projections, dim=0))
     RMS_Y = torch.sqrt(torch.mean(squared_Y_projections, dim=0))
-    bures_distance = torch.abs(RMS_X - RMS_Y)
-    bures_distance = torch.mean(bures_distance, dim=0) 
+    bures_distance = torch.pow(RMS_X - RMS_Y, p)
+    bures_distance = torch.mean(bures_distance) 
     return bures_distance
 
-def weighted_bures_distance(X_projections, Y_projections, weights, p):
+def weighted_bures_distance(X_projections, Y_projections, weights, p, eps=0.001):
     nu = simplex_norm(weights)
     # X_projections = X.matmul(projections.t())
     # Y_projections = Y.matmul(projections.t())
     squared_X_projections = torch.pow(X_projections, p)
     squared_Y_projections = torch.pow(Y_projections, p)
-    RMS_X = torch.sqrt(torch.mean(squared_X_projections, dim=0))
-    RMS_Y = torch.sqrt(torch.matmul(nu.view(1,-1), squared_Y_projections)).squeeze()
-    bures_distance = torch.abs(RMS_X - RMS_Y)
-    bures_distance = torch.mean(bures_distance, dim=0) 
+    RMS_X = torch.sqrt(eps+torch.mean(squared_X_projections, dim=0))
+    RMS_Y = torch.sqrt(eps+torch.matmul(nu.view(1,-1), squared_Y_projections)).squeeze()
+    bures_distance = torch.pow(RMS_X - RMS_Y, p)
+    bures_distance = torch.mean(bures_distance) 
     return bures_distance
+
+def w2_weighted(X,Y,b):
+    M=ot.dist(X,Y)
+    a=np.ones((X.shape[0],))/X.shape[0]
+    return ot.emd2(a,b,M)

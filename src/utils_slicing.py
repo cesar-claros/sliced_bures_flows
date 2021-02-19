@@ -7,11 +7,11 @@ class slicing:
     def __init__(self, stype='linear'):
         self.stype = stype
 
-    def get_slice(self, X, Y, projections=None, num_projections=1000, r=0.5, device='cuda'):
+    def get_slice(self, X, Y, projections=None, num_projections=1000, r=1, device='cuda'):
         if projections is None:
             assert(X.size(1)==Y.size(1))
             dim = X.size(1)
-            projections = rand_projections(dim, num_projections=1000).to(device)
+            projections = rand_projections(dim, num_projections=num_projections).to(device)
         if self.stype == 'linear':
             X_projections = X.matmul(projections.t())
             Y_projections = Y.matmul(projections.t())

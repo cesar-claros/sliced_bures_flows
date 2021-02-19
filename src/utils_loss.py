@@ -10,65 +10,73 @@ class loss:
         self.stype = stype
         self.dtype = dtype
         self.weighted = weighted
+        self.slice = slicing(self.stype)
+        self.distance = sliced_distance(self.dtype, self.weighted)
     
-    def compute(self, X, Y, weights=None, projections=None, num_projections=1000, f=None, f_op=None, lam=0.5, r=1, iter=100, device='cuda'):
+    def compute(self, X, Y, weights=None, projections=None, num_projections=1000, r=1, f=None, f_op=None, lam=1, iter=100, device='cuda'):
         if self.ftype == 'sliced':
-            d = self.compute_sliced(X, Y, weights, device=device)
+            d = self.compute_sliced_distance(X, Y, weights=weights, projections=projections, num_projections=num_projections, r=r, device=device)
         if self.ftype == 'max-sliced':
-            d = self.compute_max_sliced(X, Y, weights, device=device)
+            d = self.compute_max_sliced_distance(X, Y, weights=weights, projections=projections, r=r, iter=iter, device=device)
         if self.ftype == 'distributional-sliced':
-            d = self.compute_distributional_sliced(X, Y, weights, f=f, f_op=f_op, device=device)
+            d = self.compute_distributional_sliced_distance(X, Y, weights=weights, num_projections=num_projections, r=r, f=f, f_op=f_op, lam=lam, iter=iter, device=device)
         # if self.ftype == 'distributional':
             # X_projections, Y_projections = slicing(self.stype).get_slice(X,Y)
         return d
 
-    def compute_sliced(self, X, Y, weights=None, projections=None, num_projections=1000, device='cuda'):
+    def compute_sliced_distance(self, X, Y, weights=None, projections=None, num_projections=1000, r=1, device='cuda'):
+        X_projections, Y_projections = self.slice.get_slice(X, Y, projections=projections, num_projections=num_projections, r=r, device=device)
+        # print("X_proj={}".format(X_projections[:10]))
+        # print('y_proj={}'.format(Y_projections[:10]))
+        # print('proj={}'.format(projections[:10]))
         if self.weighted :
             assert(weights is not None)
-            X_projections, Y_projections = slicing(self.stype).get_slice(X, Y, projections, device=device)
-            d = sliced_distance(self.dtype, self.weighted).compute(X_projections, Y_projections, weights, 2)
+            d = self.distance.compute(X_projections, Y_projections, weights, 2)
         else:
             assert(weights is None)
-            X_projections, Y_projections = slicing(self.stype).get_slice(X, Y, projections, device=device)
-            d = sliced_distance(self.dtype, self.weighted).compute(X_projections, Y_projections, 2)
+            d = self.distance.compute(X_projections, Y_projections, 2)
         return d
 
-    def compute_max_sliced(self, X, Y, weights=None, projections=None, num_projections=1000, iter=100, device='cuda'):
-        theta = torch.randn((1, X.shape[1]), device=device, requires_grad=True)
-        theta.data = theta.data / torch.sqrt(torch.sum(theta.data ** 2, dim=1))
-        opt = torch.optim.Adam([theta], lr=1e-4)
+    def compute_max_sliced_distance(self, X, Y, weights=None, projections=None, r=1, iter=100, device='cuda'):
+        if projections is None:
+            theta = torch.randn((1, X.shape[1]), device=device, requires_grad=True)
+            theta.data = theta.data / torch.sqrt(torch.sum(theta.data ** 2, dim=1))
+        else:
+            theta = torch.tensor(projections, device=device, requires_grad=True)
+        opt = torch.optim.Adam([theta], lr=1e-3)
         for _ in range(iter):
-                # X_projections, Y_projections = slicing(self.stype).get_slice(X,Y,theta) 
-                # d = sliced_distance(self.dtype, self.weighted).compute(X_projections, Y_projections, weights, 2)
-                d = self.compute_sliced(X, Y, weights=weights, projections=theta)
-                l = -d 
-                opt.zero_grad()
-                l.backward(retain_graph=True)
-                opt.step()
-                theta.data = theta.data / torch.sqrt(torch.sum(theta.data ** 2, dim=1))
             # X_projections, Y_projections = slicing(self.stype).get_slice(X,Y,theta) 
             # d = sliced_distance(self.dtype, self.weighted).compute(X_projections, Y_projections, weights, 2)
-        d = self.compute_sliced(X, Y, weights=weights, projections=theta)
+            d = self.compute_sliced_distance(X, Y, weights=weights, projections=theta, r=r, device=device)
+            l = -d
+            # print(l) 
+            opt.zero_grad()
+            l.backward(retain_graph=True)
+            opt.step()
+            theta.data = theta.data / torch.sqrt(torch.sum(theta.data ** 2, dim=1))
+            # X_projections, Y_projections = slicing(self.stype).get_slice(X,Y,theta) 
+            # d = sliced_distance(self.dtype, self.weighted).compute(X_projections, Y_projections, weights, 2)
+        d = self.compute_sliced_distance(X, Y, weights=weights, projections=theta, r=r, device=device)
         return d
     
-    def compute_distributional_sliced(self, X, Y, weights=None, projections=None, num_projections=1000, f=None, f_op=None, lam=0.5, iter=100, device='cuda'):
+    def compute_distributional_sliced_distance(self, X, Y, weights=None, num_projections=1000, r=1, f=None, f_op=None, lam=1, iter=10, device='cuda'):
         dim = X.size(1)
         pro = rand_projections(dim, num_projections).to(device)
         X_detach = X.detach()
         Y_detach = Y.detach()
         for _ in range(iter):
             projections = f(pro)
+            d = self.compute_sliced_distance(X_detach, Y_detach, weights=weights, projections=projections, device=device)
             cos = cosine_distance_torch(projections, projections)
             reg = lam * cos
             # X_projections, Y_projections = slicing(self.stype).get_slice(X_detach, Y_detach, projections)
             # d = sliced_distance(self.dtype, self.weighted).compute(X_projections, Y_projections, weights, 2)
-            d = self.compute_sliced(X_detach, Y_detach, weights=weights, projections=projections)
             loss = reg - d
             f_op.zero_grad()
             loss.backward(retain_graph=True)
             f_op.step()
         projections = f(pro)
-        d = self.compute_sliced(X_detach, Y_detach, weights=weights, projections=projections)
+        d = self.compute_sliced_distance(X_detach, Y_detach, weights=weights, projections=projections)
         return d
 
 def cosine_distance_torch(x1, x2=None, eps=1e-8):
