@@ -3,6 +3,7 @@ from utils_slicing import slicing
 from utils_distances import sliced_distance
 from utils import rand_projections
 import torch
+# from torch import autograd
 class loss:
     
     def __init__(self, ftype, stype, dtype, weighted):
@@ -65,10 +66,11 @@ class loss:
         X_detach = X.detach()
         Y_detach = Y.detach()
         for _ in range(iter):
+            # with autograd.detect_anomaly():
             projections = f(pro)
-            d = self.compute_sliced_distance(X_detach, Y_detach, weights=weights, projections=projections, device=device)
             cos = cosine_distance_torch(projections, projections)
             reg = lam * cos
+            d = self.compute_sliced_distance(X_detach, Y_detach, weights=weights, projections=projections, r=r, device=device)
             # X_projections, Y_projections = slicing(self.stype).get_slice(X_detach, Y_detach, projections)
             # d = sliced_distance(self.dtype, self.weighted).compute(X_projections, Y_projections, weights, 2)
             loss = reg - d

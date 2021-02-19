@@ -17,8 +17,8 @@ class slicing:
             Y_projections = Y.matmul(projections.t())
         if self.stype == 'circular':
             centers = projections
-            X_projections = torch.sqrt(cost_matrix_slow(X, centers * r)) # N x centers
-            Y_projections = torch.sqrt(cost_matrix_slow(Y, centers * r)) # N x centers
+            X_projections = torch.sqrt(cost_matrix(X, centers * r)) # N x centers
+            Y_projections = torch.sqrt(cost_matrix(Y, centers * r)) # N x centers
         return X_projections, Y_projections 
 
 def cost_matrix_slow(x, y):
@@ -42,3 +42,10 @@ def cost_matrix_slow(x, y):
     # if y is None:
     #     dist = dist - torch.diag(dist.diag)
     return torch.clamp(dist, 0.0, np.inf)
+
+def cost_matrix(x, y, p=2):
+    "Returns the matrix of $|x_i-y_j|^p$."
+    x_col = x.unsqueeze(1)
+    y_lin = y.unsqueeze(0)
+    c = torch.sum((torch.abs(x_col - y_lin)) ** p, 2)
+    return c
