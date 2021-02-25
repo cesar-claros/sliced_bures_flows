@@ -14,13 +14,13 @@ def seed_everything(seed=1234):
     torch.cuda.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
     
-def load_data(name='swiss_roll', n_samples=1000):
+def load_data(name='swiss_roll', n_samples=1000, noise=0.1):
     N=n_samples
     if name == 'swiss_roll':
-        temp=make_swiss_roll(n_samples=N)[0][:,(0,2)]
+        temp=make_swiss_roll(n_samples=N, noise=noise)[0][:,(0,2)]
         temp/=abs(temp).max()
     elif name == 'half_moons':
-        temp=make_moons(n_samples=N)[0]
+        temp=make_moons(n_samples=N, noise=noise)[0]
         temp/=abs(temp).max()
     elif name == '8gaussians':
         # Inspired from https://github.com/caogang/wgan-gp
@@ -54,7 +54,7 @@ def load_data(name='swiss_roll', n_samples=1000):
         np.random.shuffle(temp)
         temp /= 2.828  # stdev
     elif name == 'circle':
-        temp,y=make_circles(n_samples=2*N)
+        temp,y=make_circles(n_samples=2*N, noise=noise)
         temp=temp[np.argwhere(y==0).squeeze(),:]
     else:
         raise Exception("Dataset not found: name must be 'swiss_roll', 'half_moons', 'circle', '8gaussians' or '25gaussians'.")
