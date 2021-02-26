@@ -7,18 +7,18 @@ class slicing:
     def __init__(self, stype='linear'):
         self.stype = stype
 
-    def get_slice(self, X, Y, projections=None, num_projections=1000, r=1, device='cuda'):
+    def get_slice(self, X, Y=None, projections=None, num_projections=1000, r=1, device='cuda'):
         if projections is None:
             assert(X.size(1)==Y.size(1))
             dim = X.size(1)
             projections = rand_projections(dim, num_projections=num_projections).to(device)
         if self.stype == 'linear':
             X_projections = X.matmul(projections.t())
-            Y_projections = Y.matmul(projections.t())
-        if self.stype == 'circular':
+            Y_projections = Y.matmul(projections.t()) if Y is not None else None
+        elif self.stype == 'circular':
             centers = projections
             X_projections = torch.sqrt(cost_matrix(X, centers * r)) # N x centers
-            Y_projections = torch.sqrt(cost_matrix(Y, centers * r)) # N x centers
+            Y_projections = torch.sqrt(cost_matrix(Y, centers * r)) if Y is not None else None # N x centers
         return X_projections, Y_projections 
 
 def cost_matrix_slow(x, y):
