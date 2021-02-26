@@ -61,12 +61,12 @@ def load_data(name='swiss_roll', n_samples=1000, noise=0.1):
     X = torch.from_numpy(temp).float()
     return X
 
-def rand_Fourier(X, Y, num_projections = 2000, sigma = 0.2):
+def rand_Fourier(X, Y=None, num_projections = 2000, sigma = 0.2):
     dim = X.shape[1]
     weights = torch.randn(dim,num_projections)/sigma
     centers = torch.rand((num_projections))*2*np.pi
     X_RFB = torch.cos(torch.matmul(X,weights)+centers)*np.sqrt(2.0/num_projections)
-    Y_RFB = torch.cos(torch.matmul(Y,weights)+centers)*np.sqrt(2.0/num_projections)
+    Y_RFB = torch.cos(torch.matmul(Y,weights)+centers)*np.sqrt(2.0/num_projections) if Y is not None else None
     return X_RFB, Y_RFB
 
 def simplex_norm(beta):
