@@ -105,3 +105,9 @@ def w2_weighted(X,Y,b):
     M=ot.dist(X,Y)
     a=np.ones((X.shape[0],))/X.shape[0]
     return ot.emd2(a,b,M)
+
+def w2(X,Y):
+    M=ot.dist(X,Y)
+    a=np.ones((X.shape[0],))/X.shape[0]
+    b=np.ones((Y.shape[0],))/Y.shape[0]
+    return ot.emd2(a,b,M)
