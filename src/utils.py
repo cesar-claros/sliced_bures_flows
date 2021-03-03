@@ -61,13 +61,30 @@ def load_data(name='swiss_roll', n_samples=1000, noise=0.1):
     X = torch.from_numpy(temp).float()
     return X
 
-def rand_Fourier(X, Y=None, num_projections = 2000, sigma = 0.2):
-    dim = X.shape[1]
-    weights = torch.randn(dim,num_projections)/sigma
-    centers = torch.rand((num_projections))*2*np.pi
-    X_RFB = torch.cos(torch.matmul(X,weights)+centers)*np.sqrt(2.0/num_projections)
-    Y_RFB = torch.cos(torch.matmul(Y,weights)+centers)*np.sqrt(2.0/num_projections) if Y is not None else None
-    return X_RFB, Y_RFB
+class rand_Fourier:
+    def __init__(self, dim, num_projections=200, sigma = 0.2):
+        self.num_projections = num_projections
+        self.weights = torch.randn(dim,self.num_projections)/sigma
+        self.centers = torch.rand((self.num_projections))*2*np.pi
+        
+    def compute(X, Y=None):
+#         dim = X.shape[1]
+#         weights = torch.randn(dim,num_projections)/sigma
+#         centers = torch.rand((num_projections))*2*np.pi
+        X_RFB = torch.cos(torch.matmul(X,self.weights)+self.centers)*np.sqrt(2.0/self.num_projections)
+        if Y is None:
+            return X_RFB
+        else:
+            Y_RFB = torch.cos(torch.matmul(Y,self.weights)+self.centers)*np.sqrt(2.0/self.num_projections)
+            return X_RFB, Y_RFB
+    
+#     def rand_Fourier(X, Y=None, num_projections = 2000, sigma = 0.2):
+#         dim = X.shape[1]
+#         weights = torch.randn(dim,num_projections)/sigma
+#         centers = torch.rand((num_projections))*2*np.pi
+#         X_RFB = torch.cos(torch.matmul(X,weights)+centers)*np.sqrt(2.0/num_projections)
+#         Y_RFB = torch.cos(torch.matmul(Y,weights)+centers)*np.sqrt(2.0/num_projections) if Y is not None else None
+#         return X_RFB, Y_RFB
 
 def simplex_norm(beta):
     '''
