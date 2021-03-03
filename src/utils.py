@@ -67,7 +67,7 @@ class rand_Fourier:
         self.weights = torch.randn(dim,self.num_projections)/sigma
         self.centers = torch.rand((self.num_projections))*2*np.pi
         
-    def compute(X):
+    def compute(self, X):
 #         dim = X.shape[1]
 #         weights = torch.randn(dim,num_projections)/sigma
 #         centers = torch.rand((num_projections))*2*np.pi
