@@ -17,10 +17,12 @@ class loss:
     def compute(self, X, Y, weights=None, projections=None, num_projections=1000, r=1, f=None, f_op=None, lam=1, iter=100, device='cuda'):
         if self.ftype == 'sliced':
             d = self.compute_sliced_distance(X, Y, weights=weights, projections=projections, num_projections=num_projections, r=r, device=device)
-        if self.ftype == 'max-sliced':
+        elif self.ftype == 'max-sliced':
             d = self.compute_max_sliced_distance(X, Y, weights=weights, projections=projections, r=r, iter=iter, device=device)
-        if self.ftype == 'distributional-sliced':
+        elif self.ftype == 'distributional-sliced':
             d = self.compute_distributional_sliced_distance(X, Y, weights=weights, num_projections=num_projections, r=r, f=f, f_op=f_op, lam=lam, iter=iter, device=device)
+        else:
+            raise Exception("undefined function type")
         # if self.ftype == 'distributional':
             # X_projections, Y_projections = slicing(self.stype).get_slice(X,Y)
         return d
