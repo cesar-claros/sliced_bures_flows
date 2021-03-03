@@ -63,14 +63,14 @@ class loss:
     def compute_distributional_sliced_distance(self, X, Y, weights=None, num_projections=1000, r=1, f=None, f_op=None, lam=1, iter=10, device='cuda'):
         dim = X.size(1)
         pro = rand_projections(dim, num_projections).to(device)
-        X_detach = X.detach()
-        Y_detach = Y.detach()
+#         X_detach = X.detach()
+#         Y_detach = Y.detach()
         for _ in range(iter):
             # with autograd.detect_anomaly():
             projections = f(pro)
             cos = cosine_distance_torch(projections, projections)
             reg = lam * cos
-            d = self.compute_sliced_distance(X_detach, Y_detach, weights=weights, projections=projections, r=r, device=device)
+            d = self.compute_sliced_distance(X, Y, weights=weights, projections=projections, r=r, device=device)
             # X_projections, Y_projections = slicing(self.stype).get_slice(X_detach, Y_detach, projections)
             # d = sliced_distance(self.dtype, self.weighted).compute(X_projections, Y_projections, weights, 2)
             loss = reg - d
