@@ -67,17 +67,13 @@ class rand_Fourier:
         self.weights = torch.randn(dim,self.num_projections)/sigma
         self.centers = torch.rand((self.num_projections))*2*np.pi
         
-    def compute(X, Y=None):
+    def compute(X):
 #         dim = X.shape[1]
 #         weights = torch.randn(dim,num_projections)/sigma
 #         centers = torch.rand((num_projections))*2*np.pi
         X_RFB = torch.cos(torch.matmul(X,self.weights)+self.centers)*np.sqrt(2.0/self.num_projections)
-        if Y is None:
-            return X_RFB
-        else:
-            Y_RFB = torch.cos(torch.matmul(Y,self.weights)+self.centers)*np.sqrt(2.0/self.num_projections)
-            return X_RFB, Y_RFB
-    
+        return X_RFB
+
 #     def rand_Fourier(X, Y=None, num_projections = 2000, sigma = 0.2):
 #         dim = X.shape[1]
 #         weights = torch.randn(dim,num_projections)/sigma
