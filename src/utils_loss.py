@@ -78,7 +78,8 @@ class loss:
             loss.backward(retain_graph=True)
             f_op.step()
         projections = f(pro)
-        d = self.compute_sliced_distance(X_detach, Y_detach, weights=weights, projections=projections, r=r, device=device)
+        d = self.compute_sliced_distance(X, Y, weights=weights, projections=projections, r=r, device=device)
+        # d = self.compute_sliced_distance(X_detach, Y_detach, weights=weights, projections=projections, r=r, device=device)
         return d
 
 def cosine_distance_torch(x1, x2=None, eps=1e-8):
